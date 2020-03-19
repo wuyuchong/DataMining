@@ -1,0 +1,113 @@
+---
+title: "DataMining"
+documentclass: ctexart
+output:
+  rticles::ctex:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+classoption: "hyperref,"
+---
+
+```{r}
+library(knitr)
+library(reticulate)
+use_python("/usr/local/bin/python3")
+py_config()
+```
+
+```{r}
+# use_python("/opt/anaconda3/bin/python3.7")
+# use_condaenv()
+```
+
+准备工作及函数定义：
+
+```{python}
+import numpy as np
+from scipy import linalg
+import os
+
+intercept = True
+isCp=True
+isAIC=True
+isCV=True
+
+def solve_sym(xtx, xty):
+        L = linalg.cholesky(xtx)
+        return linalg.lapack.dpotrs(L, xty)[0] 
+def turnbits_rec(p):
+    if(p==1):
+        return np.array([[True, False],[True, True]])
+    else:
+        tmp1 = np.c_[ turnbits_rec(p - 1), 
+                     np.array([False]*(2**(p - 1))).reshape((2**(p - 1), 1))]
+        tmp2 = np.c_[ turnbits_rec(p-1), 
+                     np.array([True]*(2**(p - 1))).reshape((2**(p - 1), 1))]
+        return np.r_[tmp1, tmp2]
+```
+
+导入数据：
+
+```{python}
+x = np.loadtxt("./DataForRegression/x.txt", delimiter=",")
+y = np.loadtxt("./DataForRegression/y.txt", delimiter=",")
+n, p = x.shape
+```
+
+如果有截距项时，加入一列1:
+
+```{python}
+if intercept:
+    x = np.c_[np.ones((n, 1)), x]
+else:
+    x = x
+```
+
+生成一个逻辑矩阵：
+
+```{python}
+ind_var = turnbits_rec(p)
+```
+
+```{python}
+xtx = np.dot(x.T, x)
+xty = np.dot(x.T, y)
+# 系数
+b = []
+```
+
+生成列名：
+
+```{python}
+names = np.array(['x' + str(i) for i in range(1, p+1)])
+names
+```
+
+
+
+```{r}
+np = import("numpy")
+py_help(os$zip)
+```
+
+```{python}
+import ipyrmd
+ipyrmd.rmd_to_ipynb("convert.Rmd", "convert.ipynb")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
