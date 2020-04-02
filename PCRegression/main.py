@@ -1,6 +1,13 @@
-# Regression
+#!/usr/bin/env python
+# coding: utf-8
 
-```{r}
+# # Regression
+# 
+# 
+
+# In[1]:
+
+
 import numpy as np
 from scipy.stats import norm
 from source.sim import sim
@@ -12,7 +19,7 @@ class PCRegression(object):
     """Principal Component Regression
 
     A Principal Component Regression and calculate Cp, AIC.
-    
+
     Attributes:
         x: A ndarray data of dependent variable.
         y: A ndarray data of independent variable.
@@ -33,7 +40,7 @@ class PCRegression(object):
         self.isPCA = isPCA
         self.method = method
         self.n_components = n_components
-        
+
     # Principal Component Analysis (PCA)
     def PCA(self):
       x_scale, x_bar, x_std = scale(self.x)
@@ -45,7 +52,7 @@ class PCRegression(object):
           eigva, eigve = linalg.eigh(x_cor)
           pc = np.dot(x_scale, eigve)
       self.x = pc[:,:self.n_components]
-        
+
     # Calculate Regression Coefficients
     def regress(self):
         self.n, self.p = self.x.shape
@@ -59,7 +66,7 @@ class PCRegression(object):
         self.xty = np.dot(self.x.T, self.y)
         self.b = solve_sym(self.xtx, self.xty)
         return self.b
-    
+
     # Calculate Cp and AIC statistics
     def Cp_AIC(self):
         self.b = PCRegression.regress(self)
@@ -68,26 +75,31 @@ class PCRegression(object):
         d = self.d
         self.Cp = rss + 2*d*rss/(self.n - self.p - 1)
         self.AIC = self.n*np.log(rss) + 2*d
-    
+
     def main(self):
         if self.isPCA:
             PCRegression.PCA(self)
-            
+
         if self.isCp or self.isAIC:
             PCRegression.Cp_AIC(self)
-            
+
         if self.isCp:
             print("CP")
             print(self.Cp)
-            
+
         if self.isAIC:
             print("AIC")
             print(self.AIC)
-```
 
-# Gererate X and Y
 
-```{r}
+# 
+# # Gererate X and Y
+# 
+# 
+
+# In[2]:
+
+
 n = 1000
 p = 20
 rho = 0.75
@@ -96,30 +108,45 @@ x = sim(n, p, rho, mu)
 
 beta = np.ones(p)*0.01
 y = np.dot(x, beta) + norm.rvs(n)
-```
 
-# Comparasion between PCA Regression and Normal Regression
 
-## Normal Regression
+# 
+# # Comparasion between PCA Regression and Normal Regression
+# 
+# ## Normal Regression
+# 
+# 
 
-```{r}
+# In[3]:
+
+
 regress1 = PCRegression(x, y, isPCA=False)
 regress1.main()
 regress1.d
-```
 
-## PCA Regression with normal algorithom
 
-```{r}
+# 
+# ## PCA Regression with normal algorithom
+# 
+# 
+
+# In[4]:
+
+
 regress2 = PCRegression(x, y, isPCA=True, method="normal")
 regress2.main()
 regress2.d
-```
 
-## PCA Regression with SVD algorithom
 
-```{r}
+# 
+# ## PCA Regression with SVD algorithom
+# 
+# 
+
+# In[5]:
+
+
 regress3 = PCRegression(x, y, isPCA=True, method="SVD")
 regress3.main()
 regress3.d
-```
+

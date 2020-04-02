@@ -1,25 +1,231 @@
 ---
-title: "lizirui"
-documentclass: ctexart
-output:
-  rticles::ctex:
-    fig_caption: yes
-    number_sections: yes
-    toc: yes
-classoption: "hyperref,"
+title: "BSR"
+output: html_document
 ---
 
-```{r echo=FALSE}
+```{r include=FALSE, echo=TRUE}
 library(knitr)
 library(reticulate)
+library(magrittr)
 use_python("/usr/local/bin/python3")
 py_config()
 ```
+
+# 逐步讲解（Step by Step）
+
+## 包和数据导入
 
 ```{python}
 import numpy as np
 from scipy import linalg
 import os
+```
+
+```{python}
+#os.chdir()
+x = np.loadtxt("./DataForRegression/x.txt", delimiter=",")
+y = np.loadtxt("./DataForRegression/y.txt", delimiter=",")
+```
+
+```{r}
+head(py$x) %>% 
+  as.data.frame() %>% 
+  kable(digits = 2, caption = "导入数据中的自变量（截取开头部分）")
+```
+
+```{r}
+head(py$y) %>% 
+  as.data.frame() %>% 
+  kable(digits = 2, caption = "导入数据中的因变量（截取开头部分）")
+```
+
+## 初始化
+
+```{python}
+intercept = True
+isCp=True
+isAIC=True
+isCV=True
+```
+
+n个观测，p个自变量
+
+```{python}
+n, p = x.shape
+```
+
+如果有截距项时，自变量左边加入一列1:
+
+```{python}
+if intercept:
+    x = np.c_[np.ones((n, 1)), x]
+else:
+    x = x
+```
+
+```{r}
+head(py$x) %>% 
+  as.data.frame() %>% 
+  kable(digits = 2, caption = "有截距项的自变量（截取开头部分）")
+```
+
+## 用递归法生成一个逻辑矩阵
+
+```{python}
+def turnbits_rec(p):
+    if(p==1):
+        return np.array([[True, False],[True, True]])
+    else:
+        tmp1 = np.c_[ turnbits_rec(p - 1), 
+                     np.array([False]*(2**(p - 1))).reshape((2**(p - 1), 1))] # Create False and then reshape.
+        tmp2 = np.c_[ turnbits_rec(p - 1), 
+                     np.array([True]*(2**(p - 1))).reshape((2**(p - 1), 1))] # Create True and then reshape.
+        return np.r_[tmp1, tmp2]
+ind_var = turnbits_rec(p)
+```
+
+```{r}
+head(py$ind_var) %>% 
+  as.data.frame() %>% 
+  kable(digits = 2, caption = "逻辑矩阵（截取开头部分）")
+```
+
+## 计算矩阵 *X转置* 分别与 *X* 和 *Y* 的乘积
+
+```{python}
+xtx = np.dot(x.T, x)
+xty = np.dot(x.T, y)
+b = [] # Regression Coefficients
+```
+
+## 基于交叉验证挑选最好的数据集
+
+### 系数名称
+
+```{python}
+names = np.array(['x' + str(i) for i in range(1, p+1)])
+names
+```
+
+### 数据分组
+
+n个观测：
+
+```{python}
+arrange = np.arange(0, n)
+arrange
+```
+
+打乱顺序：
+
+```{python}
+permutation = np.random.permutation(arrange)
+permutation
+```
+
+将它分为10个数组，放入一个列表之中。
+
+```{python}
+K = 10 # ten folds
+indices = np.array_split(permutation, K)
+indices # A list containing 10 arrays
+```
+
+```{r}
+py$indices
+```
+
+### 交叉验证
+
+```{python}
+# Performing Cross Validation
+def solve_sym(xtx, xty):
+    L = linalg.cholesky(xtx)
+    return linalg.lapack.dpotrs(L, xty)[0]
+    
+def cvk(ind, index): # "ind" is the index of the variables. "index" is the index of the index of the Kth fold.
+    txx = xtx[ind][:, ind] - np.dot((x[index][:, ind]).T, x[index][:, ind])
+    txy = xty[ind] - np.dot((x[index][:, ind]).T, y[index])
+    tcoe = solve_sym(txx, txy)
+    return np.sum((y[index] - np.dot(x[index][:, ind], tcoe))**2)
+        
+cverr = np.sum(np.array(
+    [[cvk(ind, index) for index in indices] for ind in ind_var])
+    , axis = 1)/n
+```
+
+上面这段可能有些难以理解，为了方便理解，我们做如下示例：
+
+*ind* 变量的索引， *index* 是交叉验证中第K组数据的索引
+
+在双层循环中，每一次取出了一个元组：
+
+```{python}
+for index in indices:
+    for ind in ind_var:
+        one = (ind, index)
+```
+
+于是，我们取出了最后一次循环的一个元祖：
+
+```{r}
+py$one
+```
+
+然后这个元组作为参数传入 *cvk* 函数，得到返回值：
+
+```{python}
+ind = one[0]
+index = one[1]
+txx = xtx[ind][:, ind] - np.dot((x[index][:, ind]).T, x[index][:, ind])
+txy = xty[ind] - np.dot((x[index][:, ind]).T, y[index])
+tcoe = solve_sym(txx, txy)
+outcome = (y[index] - np.dot(x[index][:, ind], tcoe))**2
+outcome
+np.sum(outcome)
+```
+
+以此类推，我们将 *index* 的循环放入同一行，每做一次 *ind* 的循环新加一行。
+
+```{python}
+table = np.array([[cvk(ind, index) for index in indices] for ind in ind_var])
+table
+np.shape(table)
+```
+
+即每一列是一折分组数据，每一行是一个回归子集，共256行：
+
+```{r}
+head(py$table) %>% 
+  as.data.frame() %>% 
+  kable(digits = 0, caption = "中间数据（截取开头部分）")
+```
+
+然后计算 *cverr*
+
+```{python}
+cverr = np.sum(table, axis = 1)/n
+np.shape(cverr)
+```
+
+现在，我们可以知道那一个子集是最优回归子集：
+
+```{python}
+min_id_CV = np.argmin(cverr)
+min_id_CV
+```
+
+然后输出其系数：
+
+```{python}
+if intercept:
+    sub_names_CV = np.insert(names[ind_var[min_id_CV][1:]], 0, 'mu')
+else:
+    sub_names_CV = names[ind_var[min_id_CV][1:]]
+b = [solve_sym(xtx[ind][:, ind], xty[ind]) for ind in ind_var]
+sub_beta_CV = b[min_id_CV]
+print('The best subset and coeffecients under CV:\n')
+print(dict(zip(sub_names_CV, sub_beta_CV)), '\n')
 ```
 
 # 类及函数封装
@@ -29,50 +235,6 @@ def solve_sym(xtx, xty):
     L = linalg.cholesky(xtx)
     return linalg.lapack.dpotrs(L, xty)[0] 
 ```
-
-我们使用递推公式获得矩阵$Z$
-
-$$
-\begin{array}{cc}
- & p=1 \\
-\begin{array}{c}0\\1\end{array}& 
-\left[\begin{array}{cc}
-0\\
-1
-\end{array}\right]
-\end{array} 
-\Rightarrow
-\begin{array}{cc}
- & p=2 \\
-\begin{array}{c}0\\2\\1\\3\end{array}&
-\left[\begin{array}{cc}
-0&0\\
-0&1\\
-1&0\\
-1&1
-\end{array}\right]
-\end{array}
-\Rightarrow
-\begin{array}{cc}
- & p=3 \\
-\begin{array}{c}0\\4\\2\\6\\1\\5\\3\\7\end{array}&
-\left[\begin{array}{ccc}
-0&0&0\\
-0&0&1\\
-0&1&0\\
-0&1&1\\
-1&0&0\\
-1&0&1\\
-1&1&0\\
-1&1&1
-\end{array}\right]
-\end{array}\quad \cdots \tag{2}
-$$
-
-- 上面$(2)$式中矩阵左侧的数字代表矩阵行向量的十进制数值.
-- 从$(2)$式中可以看出，给矩阵左侧添加一列$0$得到的向量，其十进制值为原向量的二倍，给矩阵的左侧添加一列$1$得到的向量，其十进制值为原向量的二倍加一.
-- 给$2^p*p$维$Z$矩阵左侧分别添加一列$0$和$1$，并按行拼接，即可得到$2^{(p+1)}*(p+1)$维$Z$矩阵.
-- turnbits_rec函数即可实现此功能。
 
 ```{python}
 def turnbits_rec(p):
@@ -125,7 +287,7 @@ class BestSubsetRegress(object):
                   for ind in self.ind_var]
         return self.b
     
-    # Calculate CV statistics
+    # Calculate Cp and AIC statistics
     def Cp_AIC(self):
         self.b = BestSubsetRegress.regress(self)
         mse = [np.sum(np.dot(self.xtx[ind][:, ind], b_)*b_) 
@@ -214,4 +376,12 @@ regress.Cp
 ```{python}
 regress.AIC
 ```
+
+
+
+
+
+
+
+
 
