@@ -24,7 +24,7 @@ def pcr_pure(xtx, xty, x_mean, y_mean, n, p, is_scale=True, is_var_exp=False, yt
         var_y = yty - n * y_mean * y_mean
         var_exp_x = np.cumsum(s)
         var_exp_x = var_exp_x / var_exp_x[-1]
-        var_exp_y = xty_scale * xty_scale / s
+        var_exp_y = xty_scale * xty_scale * s
         var_exp_y = np.cumsum(var_exp_y) / var_y
         return np.c_[b0, b1], var_exp_x, var_exp_y
     else:
