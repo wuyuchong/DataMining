@@ -155,6 +155,6 @@ np = import("numpy")
 
 ```{python}
 import ipyrmd
-ipyrmd.rmd_to_ipynb("convert.Rmd", "main.ipynb")
+ipyrmd.rmd_to_ipynb()("convert.Rmd", "main.ipynb")
 ```
 

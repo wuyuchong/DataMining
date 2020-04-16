@@ -33,7 +33,7 @@ def comparison(n, p, rho, mu, beta0, beta1):
     num2 = frame2.argmin()
     exp2 = float(pls2.report_var_exp()["var_exp_y"][num2: num2 + 1].values)
     
-    methods = ["PCR", "PSL"]
+    methods = ["PCR", "PLS"]
     components = [num1, num2]
     test_err = [min(frame1), min(frame2)]
     var_exp = [exp1, exp2]
