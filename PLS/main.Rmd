@@ -116,9 +116,3 @@ mu = norm.rvs(size=p, scale=1)
 beta0, beta1 = 1, 1 * np.ones(p, dtype=float)
 comparison(n, p, rho, mu, beta0, beta1)
 ```
-
-
-
-
-
-
