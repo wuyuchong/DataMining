@@ -322,7 +322,11 @@ $$S'(x) = \frac{e^{-x}}{(1 + e^{-x})^2} = S(x)(1-S(x))$$
 
 ### 神经网络
 
-考虑到单机运算速度的限制，我们搭建一个简单的神经网络。它具有2个输入、一个包含2个神经元的隐藏层（h1和h2）、包含1个神经元的输出层（o1）。 
+```{r echo=FALSE, fig.align='center', fig.cap='搭建的神经网络示意图', out.width='80%'}
+knitr::include_graphics("搭建的神经网络示意图.png")
+```
+
+我们搭建一个具有2个输入、一个包含2个神经元的隐藏层（h1和h2）、包含1个神经元的输出层（o1）的简单神经网络。 
 ^[A neural network with:
         - 2 inputs
         - a hidden layer with 2 neurons (h1, h2)
@@ -357,41 +361,11 @@ $$\frac{\partial L}{\partial w_{1}}=\frac{\partial L}{\partial y_{p r e d}} * \f
 
 这种向后计算偏导数的系统称为反向传导。 ^[反向传导（backpropagation）]
 
-### SGD优化方法
+### 随机梯度下降优化方法
 
 我们使用随机梯度下降（SGD）的优化算法 @王功鹏2018基于卷积神经网络的随机梯度下降算法 来逐步改变网络的权重w和偏置b，使损失函数会缓慢降低，从而改进我们的神经网络。以w1为例：
 
 $$w_{1} \leftarrow w_{1}-\eta \frac{\partial L}{\partial w_{1}}$$
-
-
-
-```{r echo=FALSE, fig.align='center', fig.cap='sigmoid function', out.width='40%'}
-curve(1/(1+exp(-x)), from = -6, to = 6, n = 100, add = FALSE, type = "l", xlab = 'x', ylab = 'y')
-```
-
-```{r echo=FALSE}
-### 定义 sigmoid 的导函数
-
-deriv_sigmoid = function(x)
-{
-  fx = sigmoid(x)
-  return(fx * (1 - fx))
-}
-```
-
-```{r echo=FALSE}
-### 定义损失函数
-
-mse_loss = function(y_true, y_pred)
-{
-  return(mean((y_true - y_pred)^2))
-}
-```
-
-
-```{r echo=FALSE, fig.align='center', fig.cap='搭建的神经网络示意图', out.width='80%'}
-knitr::include_graphics("搭建的神经网络示意图.png")
-```
 
 ### 权重的初始化
 
@@ -399,31 +373,10 @@ knitr::include_graphics("搭建的神经网络示意图.png")
 
 $$ Weight_i,Bias_i \sim N(0,1)$$
 
+## 代码实现 - 逐步讲解（Step by Step）
 
-```{r echo=FALSE}
-# --- 权重
-w1 = rnorm(1)
-w2 = rnorm(1)
-w3 = rnorm(1)
-w4 = rnorm(1)
-w5 = rnorm(1)
-w6 = rnorm(1)
 
-# --- 截距
-b1 = rnorm(1)
-b2 = rnorm(1)
-b3 = rnorm(1)
-```
 
-```{r echo=FALSE}
-feedforward = function(x, w1, w2, w3, w4, w5, w6, b1, b2, b3)
-{
-  h1 = sigmoid(w1 * x[1] + w2 * x[2] + b1)
-  h2 = sigmoid(w3 * x[1] + w4 * x[2] + b2)
-  o1 = sigmoid(w5 * h1 + w6 * h2 + b3)
-  return(o1)
-}
-```
 
 ## 模型结果
 
