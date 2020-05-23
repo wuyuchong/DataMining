@@ -291,8 +291,8 @@ y = iris['target']
 X = X[y!=2]
 y = y[y!=2]
 
-Logstic = LogsiticRegression(X, y)    
-Logstic.fit()
+Logstic = LogsiticRegression(X, y, threshold = 0.5)    
+Logstic.fit(alpha = 0.01, accuracy = 0.001)
 print("epoch:",Logstic.epoch)
 print("theta:",Logstic.thetas)
 y_predict = Logstic.predict()
@@ -414,9 +414,10 @@ def sigmoidDerivative(x):
 $$ \mathrm{MSE} = \frac{1}{n} \sum_{i=1}^n (y_{true} - y_{pred}) $$
 
 ```{python}
-def loss(y_true, y_pred):
+def mse(y_true, y_pred):
     return ((y_true - y_pred) ** 2).mean()
 ```
+
 
 ### 权重和截距的初始化
 
@@ -511,12 +512,12 @@ for epoch in range(epochs):
 
     # 预测和计算损失函数，并保存
     y_preds = np.apply_along_axis(feedforward, 1, X)
-    loss = loss(y, y_preds)
+    loss = mse(y, y_preds)
     new = np.array([epoch, loss])
     record = np.vstack([record,new])
 ```
 
-# 查看损失函数的变化
+### 查看损失函数的变化
 
 ```{python}
 record[1:10:,1]
@@ -529,20 +530,158 @@ table = read.csv("record.csv")
 plot(table, xlab = "epochs", ylab = "MSE")
 ```
 
+### 预测
+
+预测第 1 个样本:
+
+```{python}
+X[0]
+y[0]
+y_preds = feedforward(X[0])
+y_preds
+```
+
+预测第 100 个样本:
+
+```{python}
+X[99]
+y[99]
+y_preds = feedforward(X[99])
+y_preds
+```
+
 ## 代码实现 - 类封装
 
 可以调整的参数包括：
 
-- 学习率（alpha）：用于调整每次迭代的对损失函数的影响大小
-- 准确度（accuracy）：作为终止迭代的评判指标
-- 阈值（threshold）：用于给出概率后进行分类，默认为 50%
+- 迭代次数（epochs）：理论上迭代次数越多越精确，耗时越长，默认为100次
+- 学习率（learn_rate）：默认为0.1，可进一步调优
 
+```{python}
+# ----------------- 导入基本模块 -----------------
+import numpy as np
+import math
+
+# ------------ 导入source中定义的函数 ------------
+from source.sigmoid import sigmoid
+from source.sigmoidDerivative import sigmoidDerivative
+from source.mse import mse
+
+# ---------------- 定义神经网络类 ----------------
+class NeuralNetwork:
+    def __init__(self, X, y, learn_rate = 0.1, epochs = 100):
+        # 学习率和迭代次数
+        self.learn_rate = learn_rate
+        self.epochs = epochs
+        # 数据
+        self.X = X
+        self.y = y
+        # 权重和截距的初始化
+        self.w1 = np.random.normal()
+        self.w2 = np.random.normal()
+        self.w3 = np.random.normal()
+        self.w4 = np.random.normal()
+        self.w5 = np.random.normal()
+        self.w6 = np.random.normal()
+        self.b1 = np.random.normal()
+        self.b2 = np.random.normal()
+        self.b3 = np.random.normal()
+        # 记录损失函数值
+        self.record = np.array([None, None])
+    
+    # 定义前馈
+    def feedforward(self, x):
+        h1 = sigmoid(self.w1 * x[0] + self.w2 * x[1] + self.b1)
+        h2 = sigmoid(self.w3 * x[0] + self.w4 * x[1] + self.b2)
+        o1 = sigmoid(self.w5 * h1 + self.w6 * h2 + self.b3)
+        return o1
+    
+    # 定义预测函数
+    def predict(self):
+        y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
+        return y_preds 
+    
+    # 定义训练函数
+    def train(self):
+        for epoch in range(self.epochs):
+            for x, y_true in zip(self.X, self.y):
+                # 初次前馈
+                sum_h1 = self.w1 * x[0] + self.w2 * x[1] + self.b1
+                h1 = sigmoid(sum_h1)
+        
+                sum_h2 = self.w3 * x[0] + self.w4 * x[1] + self.b2
+                h2 = sigmoid(sum_h2)
+        
+                sum_o1 = self.w5 * h1 + self.w6 * h2 + self.b3
+                o1 = sigmoid(sum_o1)
+                y_pred = o1
+        
+                # 计算导数
+                d_L_d_ypred = -2 * (y_true - y_pred)
+        
+                # 输出层
+                d_ypred_d_w5 = h1 * sigmoidDerivative(sum_o1)
+                d_ypred_d_w6 = h2 * sigmoidDerivative(sum_o1)
+                d_ypred_d_b3 = sigmoidDerivative(sum_o1)
+        
+                d_ypred_d_h1 = self.w5 * sigmoidDerivative(sum_o1)
+                d_ypred_d_h2 = self.w6 * sigmoidDerivative(sum_o1)
+        
+                # 隐藏层 1
+                d_h1_d_w1 = x[0] * sigmoidDerivative(sum_h1)
+                d_h1_d_w2 = x[1] * sigmoidDerivative(sum_h1)
+                d_h1_d_b1 = sigmoidDerivative(sum_h1)
+        
+                # 隐藏层 2
+                d_h2_d_w3 = x[0] * sigmoidDerivative(sum_h2)
+                d_h2_d_w4 = x[1] * sigmoidDerivative(sum_h2)
+                d_h2_d_b2 = sigmoidDerivative(sum_h2)
+        
+                # # 迭代权重和偏差
+                # 隐藏层 1
+                self.w1 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h1 * d_h1_d_w1
+                self.w2 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h1 * d_h1_d_w2
+                self.b1 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h1 * d_h1_d_b1
+        
+                # 隐藏层 2
+                self.w3 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h2 * d_h2_d_w3
+                self.w4 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h2 * d_h2_d_w4
+                self.b2 -= self.learn_rate * d_L_d_ypred * d_ypred_d_h2 * d_h2_d_b2
+        
+                # 输出层
+                self.w5 -= self.learn_rate * d_L_d_ypred * d_ypred_d_w5
+                self.w6 -= self.learn_rate * d_L_d_ypred * d_ypred_d_w6
+                self.b3 -= self.learn_rate * d_L_d_ypred * d_ypred_d_b3
+    
+        # 计算损失函数，并保存
+        y_preds = np.apply_along_axis(self.feedforward, 1, X)
+        loss = mse(y, y_preds)
+        new = np.array([epoch, loss])
+        self.record = np.vstack([self.record,new])
+```
+
+## 测试用例
+
+我们使用经典的 iris 数据集作为测试用例。
+
+```{python}
+iris = datasets.load_iris()
+X = iris['data']
+y = iris['target']
+X = X[y!=2][:,0:2]
+y = y[y!=2]
+
+np.random.seed(1)
+model = NeuralNetwork(X, y, learn_rate = 0.1, epochs = 1000)    
+model.train()
+model.predict()
+```
+
+在此数据集下，我们将迭代次数设置在**100**次，训练后发现在有较小的几率判别效果不佳。
+
+但在迭代次数设置为**1000**次后，基本没有出现上述情况。
 
 # 参考文献 {-}
-
-
-
-
 
 
 
