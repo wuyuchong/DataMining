@@ -9,11 +9,12 @@ output:
     highlight: espresso
 classoption: "hyperref,"
 geometry: margin=1in
-csl: chinese-gb7714-2005-numeric.csl
 header-includes:
    - \usepackage{graphicx}
    - \usepackage{float}
 logo: "cufe.jpg"
+csl: chinese-gb7714-2005-numeric.csl
+bibliography: cite.bib
 ---
 
 \newpage
@@ -34,6 +35,8 @@ py_config()
 1. model 文件夹：存放两个算法模型的类
 2. source 文件夹：存放依赖函数
 3. main 文件：测试用例 demo
+
+代码同时开源托管在 github: [点击访问](https://github.com/wuyuchong/DataMining/tree/master/HomeWork)
 
 # Logistic 回归算法
 
@@ -209,6 +212,8 @@ thetas
 
 ### 预测
 
+进行样本内预测：
+
 ```{python}
 a = np.full((len(X),1),1)
 Xb = np.column_stack((a,X))
@@ -282,7 +287,7 @@ class LogsiticRegression(Regression):
 
 ## 测试用例
 
-我们使用经典的 iris 数据集作为测试用例。
+我们使用经典的 iris 数据集作为测试用例，为了验证算法正确性，我们进行样本内预测。
 
 ```{python}
 iris = datasets.load_iris()
@@ -301,7 +306,7 @@ y_predict
 
 # 神经网络算法
 
-我们使用**随机梯度下降**的优化方法构建一个较为简单的神经网络模型。 ^[考虑到神经网络是较为复杂的一类模型，在此我们只构造它的初始版本，限制较多，不具备广泛实用性。]
+我们使用**随机梯度下降**的优化方法构建一个较为简单的神经网络模型。  ^[考虑到神经网络是较为复杂的一类模型，在此我们只构造它的初始版本，限制较多，不具备广泛实用性。] @neuralnetwork
 
 ## 模型求解步骤
 
@@ -532,6 +537,8 @@ plot(table, xlab = "epochs", ylab = "MSE")
 
 ### 预测
 
+为了验证算法正确性，我们进行样本内预测。
+
 预测第 1 个样本:
 
 ```{python}
@@ -662,7 +669,7 @@ class NeuralNetwork:
 
 ## 测试用例
 
-我们使用经典的 iris 数据集作为测试用例。
+我们使用经典的 iris 数据集作为测试用例。为了验证算法正确性，我们进行样本内预测。
 
 ```{python}
 iris = datasets.load_iris()
