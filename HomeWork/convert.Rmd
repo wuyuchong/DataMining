@@ -34,8 +34,6 @@ py_config()
 
 1. model 文件夹：存放两个算法模型的类
 2. source 文件夹：存放依赖函数
-3. main.py：包含测试用例 Demo
-4. main.ipynb：包含测试用例 Demo
 
 代码同时开源托管在 github: [点击访问](https://github.com/wuyuchong/DataMining/tree/master/HomeWork)
 
@@ -77,7 +75,7 @@ $$\theta^{t+1}=\theta^{t}-\alpha \frac{\partial L(\theta)}{\partial \theta}=\the
 
 ### 包和数据导入
 
-```{python}
+```{r}
 import numpy as np
 import math
 from sklearn import datasets
@@ -85,7 +83,7 @@ from sklearn import datasets
 
 我们读取经典的 iris 数据集。 ^[只展示前5行]
 
-```{python}
+```{r}
 iris = datasets.load_iris()
 X = iris['data']
 y = iris['target']
@@ -112,7 +110,7 @@ curve(1/(1+exp(-x)), from = -6, to = 6, n = 100, add = FALSE, type = "l", xlab =
 
 适用于向量的 sigmoid 函数
 
-```{python}
+```{r}
 def sigmoidVector(Xi,thetas):
     params = - np.sum(Xi * thetas)
     outcome = 1 /(1 + math.exp(params))
@@ -121,7 +119,7 @@ def sigmoidVector(Xi,thetas):
 
 适用于矩阵的 sigmoid 函数
 
-```{python}
+```{r}
 def sigmoidMatrix(Xb,thetas):
     params = - Xb.dot(thetas)
     outcome = np.zeros(params.shape[0])
@@ -134,7 +132,7 @@ def sigmoidMatrix(Xb,thetas):
 
 - 阈值（threshold）：用于给出概率后进行分类，默认为 50%
 
-```{python}
+```{r}
 def sigmoidThreshold(Xb,thetas):
     params = - Xb.dot(thetas)
     outcome = np.zeros(params.shape[0])
@@ -151,7 +149,7 @@ def sigmoidThreshold(Xb,thetas):
 
 损失函数（cost function）就是最大似然函数**取对数**
 
-```{python}
+```{r}
 def costFunc(Xb,y):
     sum = 0.0
     for i in range(m):
@@ -169,7 +167,7 @@ def costFunc(Xb,y):
 - 学习率（alpha）：用于调整每次迭代的对损失函数的影响大小
 - 准确度（accuracy）：作为终止迭代的评判指标
 
-```{python}
+```{r}
 thetas = None
 m = 0
 alpha = 0.01
@@ -179,7 +177,7 @@ accuracy = 0.001
 
 在第一列插入1，构成 Xb 矩阵
 
-```{python}
+```{r}
 thetas = np.full(X.shape[1]+1,0.5)
 m = X.shape[0]
 a = np.full((m, 1), 1)
@@ -189,7 +187,7 @@ n = X.shape[1] + 1
 
 使用梯度下降法进行迭代：
 
-```{python}
+```{r}
 count = 1
 while True:
     before = costFunc(Xb, y)
@@ -207,7 +205,7 @@ while True:
 
 迭代完成后得到的参数：
 
-```{python}
+```{r}
 thetas
 ```
 
@@ -215,7 +213,7 @@ thetas
 
 进行样本内预测：
 
-```{python}
+```{r}
 a = np.full((len(X),1),1)
 Xb = np.column_stack((a,X))
 sigmoidThreshold(Xb, thetas)
@@ -229,7 +227,7 @@ sigmoidThreshold(Xb, thetas)
 - 准确度（accuracy）：作为终止迭代的评判指标
 - 阈值（threshold）：用于给出概率后进行分类，默认为 50%
 
-```{python}
+```{r}
 # ----------------- 导入基本模块 -----------------
 import numpy as np
 import math
@@ -262,11 +260,11 @@ class LogisticRegression(Regression):
         n  = self.X.shape[1]+1
 
         while True:
-            before = self.costFunc(Xb, self.y)
-            c = sigmoidMatrix(Xb, self.thetas) - self.y
+            before = self.costFunc(Xb, y)
+            c = sigmoidMatrix(Xb, self.thetas) - y
             for j in range(n):
                 self.thetas[j] = self.thetas[j] - alpha * np.sum(c * Xb[:,j])
-            after = self.costFunc(Xb, self.y)
+            after = self.costFunc(Xb, y)
             if after == before or math.fabs(after - before) < accuracy:
                 break
             self.epoch += 1
@@ -281,8 +279,8 @@ class LogisticRegression(Regression):
         return -1/self.m * sum
         
     def predict(self):
-        a = np.full((len(self.X), 1), 1)
-        Xb = np.column_stack((a, self.X))
+        a = np.full((len(X), 1), 1)
+        Xb = np.column_stack((a, X))
         return sigmoidThreshold(Xb, self.thetas, self.threshold)
 ```
 
@@ -290,7 +288,7 @@ class LogisticRegression(Regression):
 
 我们使用经典的 iris 数据集作为测试用例，为了验证算法正确性，我们进行样本内预测。
 
-```{python}
+```{r}
 iris = datasets.load_iris()
 X = iris['data']
 y = iris['target']
@@ -379,14 +377,14 @@ $$ Weight_i,Bias_i \sim N(0,1)$$
 
 ### 包和数据导入
 
-```{python}
+```{r}
 import numpy as np
 import math
 ```
 
 我们读取经典的 iris 数据集，取其前两个自变量。 ^[只展示前5行]
 
-```{python}
+```{r}
 iris = datasets.load_iris()
 X = iris['data']
 y = iris['target']
@@ -400,7 +398,7 @@ y[0:5]
 
 $$f(x) = \frac{1}{1 + e^{-x}}$$
 
-```{python}
+```{r}
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 ```
@@ -409,7 +407,7 @@ def sigmoid(x):
 
 $$\frac{\mathrm{d}f}{\mathrm{d}x} = f(x) * (1 - f(x))$$
 
-```{python}
+```{r}
 def sigmoidDerivative(x):
     fx = sigmoid(x)
     return fx * (1 - fx)
@@ -419,7 +417,7 @@ def sigmoidDerivative(x):
 
 $$ \mathrm{MSE} = \frac{1}{n} \sum_{i=1}^n (y_{true} - y_{pred}) $$
 
-```{python}
+```{r}
 def mse(y_true, y_pred):
     return ((y_true - y_pred) ** 2).mean()
 ```
@@ -433,7 +431,7 @@ $$L\left(w_{1}, w_{2}, w_{3}, w_{4}, w_{5}, w_{6}, b_{1}, b_{2}, b_{3}\right)$$
 knitr::include_graphics("搭建的神经网络示意图.png")
 ```
 
-```{python}
+```{r}
 weight_1a = np.random.normal()
 weight_1b = np.random.normal()
 weight_2a = np.random.normal()
@@ -450,7 +448,7 @@ bias_o = np.random.normal()
 
 将输入向前传递获得输出。
 
-```{python}
+```{r}
 def feedforward(x):
     h1 = sigmoid(weight_1a * x[0] + weight_1b * x[1] + bias_1)
     h2 = sigmoid(weight_2a * x[0] + weight_2b * x[1] + bias_2)
@@ -460,7 +458,7 @@ def feedforward(x):
 
 ### 设置学习率和迭代次数
 
-```{python}
+```{r}
 learn_rate = 0.1
 epochs = 1000
 record = np.array((None, None))
@@ -468,7 +466,7 @@ record = np.array((None, None))
 
 ### 训练神经网络
 
-```{python}
+```{r}
 record = np.array([None, None])
 for epoch in range(epochs):
     for x, y_true in zip(X, y):
@@ -529,7 +527,7 @@ for epoch in range(epochs):
 
 ### 查看损失函数的变化
 
-```{python}
+```{r}
 record[1:10:,1]
 ```
 
@@ -546,7 +544,7 @@ plot(table, xlab = "epochs", ylab = "MSE")
 
 预测第 1 个样本:
 
-```{python}
+```{r}
 X[0]
 y[0]
 y_preds = feedforward(X[0])
@@ -555,7 +553,7 @@ y_preds
 
 预测第 100 个样本:
 
-```{python}
+```{r}
 X[99]
 y[99]
 y_preds = feedforward(X[99])
@@ -569,7 +567,7 @@ y_preds
 - 迭代次数（epochs）：理论上迭代次数越多越精确，耗时越长，默认为100次
 - 学习率（learn_rate）：默认为0.1，可进一步调优
 
-```{python}
+```{r}
 # ----------------- 导入基本模块 -----------------
 import numpy as np
 import math
@@ -666,8 +664,8 @@ class NeuralNetwork:
                 self.bias_o -= self.learn_rate * L_ypred * ypred_bias_o
     
         # 计算损失函数，并保存
-        y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
-        loss = mse(self.y, y_preds)
+        y_preds = np.apply_along_axis(self.feedforward, 1, X)
+        loss = mse(y, y_preds)
         new = np.array([epoch, loss])
         self.record = np.vstack([self.record,new])
 ```
@@ -676,7 +674,7 @@ class NeuralNetwork:
 
 我们使用经典的 iris 数据集作为测试用例。为了验证算法正确性，我们进行样本内预测。
 
-```{python}
+```{r}
 iris = datasets.load_iris()
 X = iris['data']
 y = iris['target']
@@ -695,6 +693,10 @@ model.predict()
 
 # 参考文献 {-}
 
+```{r}
+library(knitr)
+purl("代码文档.Rmd", output = "main.py")
+```
 
 
 
