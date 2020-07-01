@@ -31,6 +31,7 @@ y = iris['target']
 X = X[y!=2]
 y = y[y!=2]
 
+# 将学习率固定在 0.01
 Logstic = LogisticRegression(X, y, threshold = 0.5)    
 Logstic.fit(alpha = 0.01, accuracy = 0.001)
 print("epoch:", Logstic.epoch)
@@ -38,7 +39,13 @@ print("theta:", Logstic.thetas)
 y_predict = Logstic.predict()
 y_predict
 
-
+# 使用自动控制的下降学习率
+Logstic2 = LogisticRegression(X, y, threshold = 0.5)    
+Logstic2.auto_fit(accuracy = 0.001)
+print("epoch:",Logstic2.epoch)
+print("theta:",Logstic2.thetas)
+y_predict = Logstic2.predict()
+y_predict
 
 ## ----------------------------------------------------------------------------------------------------
 # 神经网络 算法测试用例
@@ -55,7 +62,7 @@ np.random.seed(1)
 model = NeuralNetwork(X, y, learn_rate = 0.1, epochs = 1000)    
 model.train()
 model.predict()
-
+model.figure()
 
 ## ----------------------------------------------------------------------------------------------------
 # 详解见 代码文档.pdf 

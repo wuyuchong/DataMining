@@ -39,6 +39,13 @@ py_config()
 
 代码同时开源托管在 github: [点击访问](https://github.com/wuyuchong/DataMining/tree/master/HomeWork)
 
+# 更新
+
+在作业第一次提交的基础上，又做了以下改进：
+
+- 为 Logit算法 添加了新功能：引入自动的可变的学习率，在迭代刚开始时较大，以便于损失函数的迅速变化；在迭代中后期则尽量小，以保证精确度。
+- 为 神经网络算法 添加了新功能：可通过 *figure* 函数直接画出损失函数的迭代图。
+
 # Logistic 回归算法
 
 我们使用**梯度下降**的优化方法构建 logit 模型。
@@ -71,7 +78,7 @@ $$\frac{\partial L(\theta)}{\partial \theta}=\sum_{i=1}^{n} y_{i} x_{i}-\sum_{i}
 
 $$\theta^{t+1}=\theta^{t}-\alpha \frac{\partial L(\theta)}{\partial \theta}=\theta^{t}-\alpha \sum_{i=1}^{n}\left(y_{i}-\sigma\left(\theta^{T} x_{i}\right)\right) x_{j}$$
 
-在进行训练之前，我们对各个变量的数据进行标准化处理。然后，我们让学习率逐步递减进行训练。 @LiFeng
+在进行训练之前，我们对各个变量的数据进行标准化处理。
 
 ## 代码实现 - 逐步讲解（Step by Step）
 
@@ -176,7 +183,6 @@ alpha = 0.01
 accuracy = 0.001
 ```
 
-
 在第一列插入1，构成 Xb 矩阵
 
 ```{python}
@@ -190,19 +196,19 @@ n = X.shape[1] + 1
 使用梯度下降法进行迭代：
 
 ```{python}
-count = 1
+i = 1
 while True:
     before = costFunc(Xb, y)
-    c = sigmoidMatrix(Xb, thetas)-y
+    c = sigmoidMatrix(Xb, thetas) - y
     for j in range(n):
-        thetas[j] = thetas[j] -alpha * np.sum(c * Xb[:,j])
+        thetas[j] = thetas[j] - alpha * np.sum(c * Xb[:,j])
     after = costFunc(Xb, y)
     if after == before or math.fabs(after - before) < accuracy:
         print("迭代完成，损失函数值:",after)
         break
-    print("迭代次数:",count)
+    print("迭代次数:",i)
     print("损失函数变化",(after - before))
-    count += 1
+    i += 1
 ```
 
 迭代完成后得到的参数：
@@ -221,6 +227,30 @@ Xb = np.column_stack((a,X))
 sigmoidThreshold(Xb, thetas)
 ```
 
+### 改进
+
+相比作业预提交，我们添加了一个新的功能，通过新上线的 *auto_fit* 函数，我们可以不用再指定一个固定的学习率，交给程序自动调整学习率。 
+
+为了使得学习过程中保持精确的同时，迭代次数尽可能的减少，我们引入一种**可变的学习率**。这种学习率在迭代刚开始时较大，以便于损失函数的迅速变化；在迭代中后期则尽量小，以保证精确度。 @LiFeng
+
+```{r echo=FALSE}
+alpha = function(x)
+{
+  if(x<100)
+  {
+    return(1/exp(x)/100)
+  }
+  else
+  {
+    return(1/exp(100))
+  }
+}
+```
+
+```{r echo=FALSE, fig.align='center', fig.cap='递减的学习率函数', warning=FALSE, out.width='40%'}
+curve(alpha, from = 1, to = 50, n = 100, add = FALSE, type = "l", xlab = 'epochs', ylab = 'learn_rate')
+```
+
 ## 代码实现 - 类封装
 
 可以调整的参数包括：
@@ -228,6 +258,12 @@ sigmoidThreshold(Xb, thetas)
 - 学习率（alpha）：用于调整每次迭代的对损失函数的影响大小
 - 准确度（accuracy）：作为终止迭代的评判指标
 - 阈值（threshold）：用于给出概率后进行分类，默认为 50%
+
+可以调用的函数包括：
+
+- fit() ：用于固定学习率的拟合
+- auto_fit() ：用于自动下降学习率的拟合
+- predict() ：用于输出预测结果
 
 ```{python}
 # ----------------- 导入基本模块 -----------------
@@ -270,7 +306,30 @@ class LogisticRegression(Regression):
             if after == before or math.fabs(after - before) < accuracy:
                 break
             self.epoch += 1
- 
+            
+    def auto_alpha(self):
+        if self.epoch < 100:
+            return 1/math.exp(self.epoch)/100
+        else:
+            return 1/math.exp(100)
+
+    def auto_fit(self, accuracy = 0.001):
+        self.thetas = np.full(self.X.shape[1] + 1,0.5)
+        self.m = self.X.shape[0]
+        a = np.full((self.m, 1), 1)
+        Xb = np.column_stack((a,self.X))
+        n  = self.X.shape[1]+1
+        
+        while True:
+            before = self.costFunc(Xb, self.y)
+            c = sigmoidMatrix(Xb, self.thetas) - self.y
+            for j in range(n):
+                self.thetas[j] = self.thetas[j] - self.auto_alpha() * np.sum(c * Xb[:,j])
+            after = self.costFunc(Xb, self.y)
+            if after == before or math.fabs(after - before) < accuracy:
+                break
+            self.epoch += 1
+            
     def costFunc(self, Xb, y):
         sum = 0.0
         for i in range(self.m):
@@ -296,6 +355,16 @@ X = iris['data']
 y = iris['target']
 X = X[y!=2]
 y = y[y!=2]
+```
+
+### 固定学习率
+
+```{python}
+iris = datasets.load_iris()
+X = iris['data']
+y = iris['target']
+X = X[y!=2]
+y = y[y!=2]
 
 Logstic = LogisticRegression(X, y, threshold = 0.5)    
 Logstic.fit(alpha = 0.01, accuracy = 0.001)
@@ -304,6 +373,19 @@ print("theta:",Logstic.thetas)
 y_predict = Logstic.predict()
 y_predict
 ```
+
+### 自动下降学习率
+
+```{python}
+Logstic2 = LogisticRegression(X, y, threshold = 0.5)    
+Logstic2.auto_fit(accuracy = 0.001)
+print("epoch:",Logstic2.epoch)
+print("theta:",Logstic2.thetas)
+y_predict = Logstic2.predict()
+y_predict
+```
+
+可以发现，相比于固定学习率，采用自动下降学习率之后，在相同的精度要求下，迭代的次数从 8 次下降到了 6 次，有着速度优势。
 
 # 神经网络算法
 
@@ -424,7 +506,6 @@ def mse(y_true, y_pred):
     return ((y_true - y_pred) ** 2).mean()
 ```
 
-
 ### 权重和截距的初始化
 
 $$L\left(w_{1}, w_{2}, w_{3}, w_{4}, w_{5}, w_{6}, b_{1}, b_{2}, b_{3}\right)$$
@@ -530,7 +611,7 @@ for epoch in range(epochs):
 ### 查看损失函数的变化
 
 ```{python}
-record[1:10:,1]
+record[1:10,1]
 ```
 
 我们画出损失函数的变化图像，可以看出，随着迭代次数的增加，均方误差先快速减小，后趋向于稳定。
@@ -562,12 +643,22 @@ y_preds = feedforward(X[99])
 y_preds
 ```
 
+### 改进
+
+相比作业预提交，我们添加了一个新的功能，通过新上线的 *figure* 函数，我们可以直接画出损失函数的迭代图。
+
 ## 代码实现 - 类封装
 
 可以调整的参数包括：
 
 - 迭代次数（epochs）：理论上迭代次数越多越精确，耗时越长，默认为100次
 - 学习率（learn_rate）：默认为0.1，可进一步调优
+
+可以调用的函数包括：
+
+- train() ：用于训练神经网络模型
+- predict() ：用于输出预测结果
+- figure() ：用于画出损失函数迭代图
 
 ```{python}
 # ----------------- 导入基本模块 -----------------
@@ -600,6 +691,16 @@ class NeuralNetwork:
         self.bias_o = np.random.normal()
         # 记录损失函数值
         self.record = np.array([None, None])
+    
+    # 用于画 MSE 的图像
+    def figure(self):
+        x = self.record[1:,0]
+        y = self.record[1:,1]
+        plt.title("Variation of the Loss Function") 
+        plt.xlabel("epochs") 
+        plt.ylabel("MSE") 
+        plt.plot(x,y,"ob") 
+        plt.show()
     
     # 定义前馈
     def feedforward(self, x):
@@ -665,11 +766,11 @@ class NeuralNetwork:
                 self.weight_o2 -= self.learn_rate * L_ypred * ypred_weight_o2
                 self.bias_o -= self.learn_rate * L_ypred * ypred_bias_o
     
-        # 计算损失函数，并保存
-        y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
-        loss = mse(self.y, y_preds)
-        new = np.array([epoch, loss])
-        self.record = np.vstack([self.record,new])
+            # 计算损失函数，并保存
+            y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
+            loss = mse(self.y, y_preds)
+            new = np.array([epoch, loss])
+            self.record = np.vstack([self.record, new])
 ```
 
 ## 测试用例

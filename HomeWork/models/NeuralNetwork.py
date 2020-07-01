@@ -9,6 +9,7 @@
 # ----------------- 导入基本模块 -----------------
 import numpy as np
 import math
+from matplotlib import pyplot as plt
 
 # ------------ 导入source中定义的函数 ------------
 from source.sigmoid import sigmoid
@@ -36,6 +37,16 @@ class NeuralNetwork:
         self.bias_o = np.random.normal()
         # 记录损失函数值
         self.record = np.array([None, None])
+    
+    # 用于画 MSE 的图像
+    def figure(self):
+        x = self.record[1:,0]
+        y = self.record[1:,1]
+        plt.title("Variation of the Loss Function") 
+        plt.xlabel("epochs") 
+        plt.ylabel("MSE") 
+        plt.plot(x,y,"ob") 
+        plt.show()
     
     # 定义前馈
     def feedforward(self, x):
@@ -101,8 +112,8 @@ class NeuralNetwork:
                 self.weight_o2 -= self.learn_rate * L_ypred * ypred_weight_o2
                 self.bias_o -= self.learn_rate * L_ypred * ypred_bias_o
     
-        # 计算损失函数，并保存
-        y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
-        loss = mse(self.y, y_preds)
-        new = np.array([epoch, loss])
-        self.record = np.vstack([self.record,new])
+            # 计算损失函数，并保存
+            y_preds = np.apply_along_axis(self.feedforward, 1, self.X)
+            loss = mse(self.y, y_preds)
+            new = np.array([epoch, loss])
+            self.record = np.vstack([self.record, new])

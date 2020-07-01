@@ -46,7 +46,30 @@ class LogisticRegression(Regression):
             if after == before or math.fabs(after - before) < accuracy:
                 break
             self.epoch += 1
- 
+            
+    def auto_alpha(self):
+        if self.epoch < 100:
+            return 1/math.exp(self.epoch)/100
+        else:
+            return 1/math.exp(100)
+
+    def auto_fit(self, accuracy = 0.001):
+        self.thetas = np.full(self.X.shape[1] + 1,0.5)
+        self.m = self.X.shape[0]
+        a = np.full((self.m, 1), 1)
+        Xb = np.column_stack((a,self.X))
+        n  = self.X.shape[1]+1
+        
+        while True:
+            before = self.costFunc(Xb, self.y)
+            c = sigmoidMatrix(Xb, self.thetas) - self.y
+            for j in range(n):
+                self.thetas[j] = self.thetas[j] - self.auto_alpha() * np.sum(c * Xb[:,j])
+            after = self.costFunc(Xb, self.y)
+            if after == before or math.fabs(after - before) < accuracy:
+                break
+            self.epoch += 1
+            
     def costFunc(self, Xb, y):
         sum = 0.0
         for i in range(self.m):
