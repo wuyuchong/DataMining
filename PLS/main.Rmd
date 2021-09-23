@@ -1,6 +1,17 @@
 ---
-title: "comparison"
-output: html_document
+title: "主成分与偏最小二乘回归的效果对比"
+description: "Comparison of the effects of principal components and partial least squares regression"
+author: Jingyi Ma(编写), Yuchong Wu(整理)
+date: 2020-04-17
+categories: ["Python", "主成分回归", "偏最小二乘回归", "变量选择"]
+tags: ["Python", "主成分回归", "偏最小二乘回归", "变量选择"]
+documentclass: ctexart
+output:
+  rticles::ctex:
+    fig_caption: yes
+    number_sections: yes
+    toc: yes
+classoption: "hyperref,"
 ---
 
 ```{r setup, include=FALSE}
